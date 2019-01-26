@@ -1,44 +1,35 @@
 ﻿using Grains.Contracts;
+using Grains.ParameterObjects;
+using Orleankka;
 using Orleans;
-using Orleans.Providers;
-using Silo;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Grains.Implementations
 {
-    [StorageProvider(ProviderName = "BlobStorage")]
-    internal class DomainGrain : Grain<DomainGrainState>, IDomainGrain
+    /// <summary>
+    /// TODO: Write storage repository that will use Azure blob storage and inject it to grains for persistence.
+    /// </summary>
+    public class DomainGrain : ActorGrain, IDomainGrain
     {
         private static readonly int DatabaseWritePeriodInMinutes = 5;
         private string domainKey;
+        private readonly HashSet<string> hackedAccounts;
         private readonly Func<object, Task> writeToDbCallback;
 
         public DomainGrain()
         {
             writeToDbCallback = WriteToDb;
+            hackedAccounts = new HashSet<string>();
         }
 
         public override Task OnActivateAsync()
         {
-            if (State.HackedAccounts == null)
-                State.HackedAccounts = new HashSet<string>();
             domainKey = this.GetPrimaryKeyString();
             Console.WriteLine($"Grain for domain {domainKey} activated!");
-            this.RegisterTimer(writeToDbCallback, domainKey, TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes), TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes));
-            return base.OnActivateAsync();
-        }
-
-        public async Task<bool> AddHackedMailAccount(string mailAccount)
-        {
-            HashSet<String> set = State.HackedAccounts;
-            return await Task.FromResult(set.Add(mailAccount));
-        }
-
-        public async Task<bool> CheckIfMailWasHacked(string mailAccount)
-        {
-            return await Task.FromResult(State.HackedAccounts.Contains(mailAccount));
+            //this.RegisterTimer(writeToDbCallback, domainKey, TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes), TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes));
+            return Task.CompletedTask;
         }
 
         public override Task OnDeactivateAsync()
@@ -51,8 +42,22 @@ namespace Grains.Implementations
         private Task WriteToDb(object o)
         {
             Console.WriteLine("Save to db!");
-            base.WriteStateAsync();
             return Task.CompletedTask;
+        }
+
+        public override Task<object> Receive(object message)
+        {
+            return Task.FromResult<object>(Handle((dynamic)message));
+        }
+
+        private bool Handle(AddMail msg)
+        {
+            return hackedAccounts.Add(msg.Account);
+        }
+
+        private bool Handle(CheckMail msg)
+        {
+            return hackedAccounts.Contains(msg.Account);
         }
     }
 }

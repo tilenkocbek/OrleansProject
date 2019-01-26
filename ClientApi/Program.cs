@@ -1,9 +1,9 @@
 ﻿using ClientApi.OrleansClient;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans;
+using Orleankka.Client;
+using System.Threading.Tasks;
 
 namespace ClientApi
 {
@@ -12,11 +12,11 @@ namespace ClientApi
         public static async Task Main(string[] args)
         {
             var client = new Client();
-            await client.Initialize();
+            await client.Connect(3);
             CreateWebHostBuilder(client).Build().Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(Client client) =>
-            WebHost.CreateDefaultBuilder().UseStartup<Startup>().ConfigureServices(services => services.AddSingleton<IClusterClient>(client.ClusterClient));
+            WebHost.CreateDefaultBuilder().UseStartup<Startup>().ConfigureServices(services => services.AddSingleton<IClientActorSystem>(client.ClusterClient.ActorSystem()));
     }
 }

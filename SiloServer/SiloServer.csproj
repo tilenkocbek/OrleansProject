@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Persistence.AzureStorage" Version="2.2.3" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="2.2.3" />
+    <PackageReference Include="Orleankka.Runtime" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

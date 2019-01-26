@@ -20,4 +20,13 @@
     <ProjectReference Include="..\Grains\Grains.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Orleankka">
+      <HintPath>..\..\..\..\.nuget\packages\orleankka\2.2.0\lib\netstandard2.0\Orleankka.dll</HintPath>
+    </Reference>
+    <Reference Include="Orleans.CodeGeneration">
+      <HintPath>..\..\..\..\.nuget\packages\microsoft.orleans.orleanscodegenerator\2.1.2\lib\netstandard2.0\Orleans.CodeGeneration.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

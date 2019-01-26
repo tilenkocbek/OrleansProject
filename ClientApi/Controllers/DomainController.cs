@@ -1,7 +1,9 @@
 ﻿using ClientApi.Util;
 using Grains.Contracts;
+using Grains.ParameterObjects;
 using Microsoft.AspNetCore.Mvc;
-using Orleans;
+using Orleankka;
+using Orleankka.Client;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,11 +13,11 @@ namespace ClientApi.Controllers
     [ApiController]
     public class DomainController : Controller
     {
-        private IClusterClient client;
+        private readonly IClientActorSystem system;
 
-        public DomainController(IClusterClient client)
+        public DomainController(IClientActorSystem system)
         {
-            this.client = client;
+            this.system = system;
         }
 
         [HttpGet("{email}")]
@@ -24,7 +26,7 @@ namespace ClientApi.Controllers
             if (!Utils.IsEmailValid(email))
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
 
-            var isHacked = await CheckIfAccountIsHacked(email);
+            bool isHacked = await CheckIfAccountIsHacked(email);
             return isHacked ? new HttpResponseMessage(HttpStatusCode.OK) : new HttpResponseMessage(HttpStatusCode.NotFound);
         }
 
@@ -41,15 +43,15 @@ namespace ClientApi.Controllers
         private async Task<bool> CheckIfAccountIsHacked(string email)
         {
             Utils.SplitEmailAddress(email, out var username, out var domain);
-            var domainGrain = client.GetGrain<IDomainGrain>(domain);
-            return await domainGrain.CheckIfMailWasHacked(username);
+            var domainGrain = system.ActorOf<IDomainGrain>(domain);
+            return await domainGrain.Ask<bool>(new CheckMail { Account = username });
         }
 
         private async Task<bool> AddHackedAccount(string email)
         {
             Utils.SplitEmailAddress(email, out var username, out var domain);
-            var domainGrain = client.GetGrain<IDomainGrain>(domain);
-            return await domainGrain.AddHackedMailAccount(username);
+            var domainGrain = system.ActorOf<IDomainGrain>(domain);
+            return await domainGrain.Ask<bool>(new AddMail { Account = username });
         }
     }
 }

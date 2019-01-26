@@ -3,6 +3,8 @@ using Orleans.Hosting;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Orleankka.Cluster;
+using Orleans;
 using static Config.Configuration;
 
 namespace Silo
@@ -26,6 +28,8 @@ namespace Silo
                         options.ClusterId = ClusterId;
                         options.ServiceId = ServiceId;
                     }).Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
+                .ConfigureApplicationParts(x => x.ConfigureDefaults())
+                .UseOrleankka()
                 .AddAzureBlobGrainStorage("BlobStorage",
                     options => options.ConnectionString = "UseDevelopmentStorage=true");
             ISiloHost host = siloBuilder.Build();
