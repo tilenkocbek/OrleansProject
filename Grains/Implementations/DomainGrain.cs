@@ -24,21 +24,6 @@ namespace Grains.Implementations
             hackedAccounts = new HashSet<string>();
         }
 
-        public override Task OnActivateAsync()
-        {
-            domainKey = this.GetPrimaryKeyString();
-            Console.WriteLine($"Grain for domain {domainKey} activated!");
-            //this.RegisterTimer(writeToDbCallback, domainKey, TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes), TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes));
-            return Task.CompletedTask;
-        }
-
-        public override Task OnDeactivateAsync()
-        {
-            Console.WriteLine($"Grain for domain {domainKey} will be deactivated.");
-            WriteToDb(null);
-            return base.OnDeactivateAsync();
-        }
-
         private Task WriteToDb(object o)
         {
             Console.WriteLine("Save to db!");
@@ -47,17 +32,42 @@ namespace Grains.Implementations
 
         public override Task<object> Receive(object message)
         {
-            return Task.FromResult<object>(Handle((dynamic)message));
+            switch (message)
+            {
+                case Activate _:
+                    {
+                        domainKey = this.GetPrimaryKeyString();
+                        Console.WriteLine($"Grain for domain {domainKey} activated!");
+                        //this.RegisterTimer(writeToDbCallback, domainKey, TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes), TimeSpan.FromMinutes(DatabaseWritePeriodInMinutes));
+                        return Task.FromResult<object>(Task.CompletedTask);
+                    }
+                case Deactivate _:
+                    {
+                        Console.WriteLine($"Grain for domain {domainKey} will be deactivated.");
+                        WriteToDb(null);
+                        return Task.FromResult<object>(Task.CompletedTask);
+                    }
+                case AddMail msg:
+                    {
+                        return Task.FromResult<object>(AddHackedMailAccount(msg.Account));
+                    }
+                case CheckMail msg:
+                    {
+                        return Task.FromResult<object>(CheckIfAccountWasHacked(msg.Account));
+                    }
+                default:
+                    return Task.FromResult<object>(Task.CompletedTask);
+            }
         }
 
-        private bool Handle(AddMail msg)
+        private bool AddHackedMailAccount(string account)
         {
-            return hackedAccounts.Add(msg.Account);
+            return hackedAccounts.Add(account);
         }
 
-        private bool Handle(CheckMail msg)
+        private bool CheckIfAccountWasHacked(string account)
         {
-            return hackedAccounts.Contains(msg.Account);
+            return hackedAccounts.Contains(account);
         }
     }
 }
